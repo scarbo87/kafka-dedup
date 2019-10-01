@@ -13,16 +13,13 @@ Docker should be installed.
 
 To run:
 
-     docker-compose up -d && docker-compose logs -f our-service our-service2 our-service3
-     
+```
+docker-compose up -d && docker-compose logs -f haproxy kafka1 our-service our-service2 our-service3
+```
+
 Once the environment has been started, you have to add some commands with:
 
-     curl --data "command-key=key1&command=open the door" -X POST http://localhost:3004/run-command
-
-## Clean up
-
-To get rid of all:
-
-    docker-compose down --rmi all --remove-orphans
-    docker image rm pandeiro/lein:2.5.2 wurstmeister/kafka:0.10.1.0-1
+```
+curl --data "command-key=key1&command=open the door" -X POST http://localhost:9100/run-command
+```
     

@@ -1,25 +1,51 @@
 version: "2"
 services:
- zoo1:
-   image: wurstmeister/zookeeper:3.4.6
- kafka1:
-   build: kafka
-   links:
-    - zoo1
-   environment:
+
+  haproxy:
+    image: haproxy:latest
+    volumes:
+      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
+    ports:
+      - "9100:9100"
+      - "9101:9101"
+    environment:
+      - HAPROXY_FRONT=*:9100
+      - HAPROXY_STATS=*:9101
+
+      - NODE1=our-service:80
+      - NODE2=our-service2:80
+      - NODE3=our-service3:80
+
+  zoo1:
+    image: wurstmeister/zookeeper:latest
+    ports:
+      - "2181:2181"
+
+  kafka1:
+    image: wurstmeister/kafka:latest
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zoo1
+    environment:
+      KAFKA_LOG_DIRS: /dev/shm/kafka
       KAFKA_BROKER_ID: 1
+      KAFKA_MIN_INSYNC_REPLICAS: 1
+      KAFKA_ADVERTISED_HOST_NAME: kafka1
       KAFKA_ADVERTISED_PORT: 9092
-      KAFKA_ZOOKEEPER_CONNECT: zoo1:2181
+      KAFKA_ZOOKEEPER_CONNECT:  zoo1:2181
       KAFKA_CREATE_TOPICS: "run-command-topic:4:1"
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
- our-service: &service
-   build: our-service
-   volumes:
-    - ./our-service/src/:/app/src/
-    - ~/.m2:/root/.m2
- our-service2: *service
- our-service3:
-   <<: *service
-   ports:
-    - 3003:3002
-    - 3004:80
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+
+  our-service: &service
+    build: our-service
+    volumes:
+      - ./our-service/src/:/app/src/
+      - ~/.m2:/root/.m2
+
+  our-service2: *service
+  our-service3:
+    <<: *service
+    ports:
+      - 3002
+      - 80
